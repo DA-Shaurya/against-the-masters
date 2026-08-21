@@ -13,25 +13,25 @@
 ## 🌟 Key Features
 
 ### 🧠 Dual Engine Search Architectures
-- **Classical Alpha-Beta Search**: Combines material evaluation, Piece-Square Tables (PST), tactical threat protection (penalizing hanging major pieces under pawn attack by over 600 centipawns), and Quiescence search with imitation-trained **Champion Policy Bias** ($+0 \dots +15$ centipawn boost for signature champion moves).
-- **Neural MCTS Engine**: Executes pure Monte Carlo Tree Search using a dual-head Policy/Value network ($\text{move\_logits}$ and $\text{value}$ heads), leaf expansion, PUCT move selection ($C_{\text{PUCT}} = 1.5$), exact terminal state resolution ($\text{Checkmate} = -1.0$, $\text{Draw} = 0.0$), and alternating sign backpropagation.
+- **Classical Alpha-Beta Search**: Combines material evaluation, Piece-Square Tables (PST), tactical threat protection (penalizing hanging major pieces under pawn attack by over 600 centipawns), and Quiescence search with imitation-trained **Champion Policy Bias** (+0 to +15 centipawn boost for signature champion moves).
+- **Neural MCTS Engine**: Executes pure Monte Carlo Tree Search using a dual-head Policy/Value network (`move_logits` and `value` heads), leaf expansion, PUCT move selection ($C_{\text{PUCT}} = 1.5$), exact terminal state resolution (Checkmate = -1.0, Draw = 0.0), and alternating sign backpropagation.
 
 ### 🛡️ Material-Anchored Horizon Blending
 To prevent Monte Carlo Tree Search from making un-calculated piece sacrifices when search depth cuts off, the MCTS engine blends neural evaluations with static material values:
-$$V_{\text{final}}(s) = 0.8 \cdot V_{\text{neural}}(s) + 0.2 \cdot \tanh\left(\frac{\text{StaticCentipawns}(s)}{400}\right)$$
+$$V_{\text{final}}(s) = 0.8 \cdot V_{\text{neural}}(s) + 0.2 \cdot \tanh\left(\frac{\text{StaticScore}(s)}{400}\right)$$
 
 ### 👑 Endgame King-Driving Heuristics
 When total non-pawn material drops below 1,500, the evaluation function dynamically calculates:
-1. **Losing King Edge Penalty**: Measures how far the losing King is pushed away from center squares ($\text{d4, d5, e4, e5}$), awarding $+10 \dots +40$ centipawns to the winning side.
-2. **King Proximity Bonus**: Measures Manhattan distance between the winning King and losing King, granting $+10 \dots +30$ centipawns when the winning King closes in to enforce checkmate.
+1. **Losing King Edge Penalty**: Measures how far the losing King is pushed away from center squares (d4, d5, e4, e5), awarding +10 to +40 centipawns to the winning side.
+2. **King Proximity Bonus**: Measures Manhattan distance between the winning King and losing King, granting +10 to +30 centipawns when the winning King closes in to enforce checkmate.
 
 ### 📊 Real-Time Dynamic Evaluation Bar
 - Slim, elegant vertical evaluation bar embedded directly inside the board frame.
-- Calculates win probability percentage ($0\% \dots 100\%$) and smoothly transitions using CSS easing (`transition: height 0.5s ease;`).
+- Calculates win probability percentage (0% to 100%) and smoothly transitions using CSS easing (`transition: height 0.5s ease;`).
 - Updates immediately after both AI moves and player turns.
 
 ### 📖 Grandmaster Opening Book Interception
-- Intercepts opening positions against `opening_book.json` to play theoretical grandmaster moves instantly ($0\text{ ms}$) with visual indicators (`📖 Book Move`).
+- Intercepts opening positions against `opening_book.json` to play theoretical grandmaster moves instantly (0 ms) with visual indicators (`📖 Book Move`).
 
 ### 🎵 Synthesized Web Audio API
 - Fully custom Web Audio API synthesizer for sound effects (move, capture, check, and game over) with zero external media files.
@@ -64,14 +64,14 @@ The platform allows you to play against 10 distinct World Chess Champions, each 
 
 ### 1. Board Tensor Representation
 Chess board states are converted into a $[1, 17, 8, 8]$ binary tensor:
-- **Planes 0–5**: White pieces ($\text{P, N, B, R, Q, K}$)
-- **Planes 6–11**: Black pieces ($\text{P, N, B, R, Q, K}$)
-- **Plane 12**: Active turn indicator ($1$ for White, $0$ for Black)
-- **Planes 13–16**: Castling rights ($\text{K, Q, k, q}$)
+- **Planes 0–5**: White pieces (P, N, B, R, Q, K)
+- **Planes 6–11**: Black pieces (P, N, B, R, Q, K)
+- **Plane 12**: Active turn indicator (1 for White, 0 for Black)
+- **Planes 13–16**: Castling rights (K, Q, k, q)
 
 ### 2. PUCT Move Selection Formula
 MCTS node selection during tree traversal is governed by:
-$$U(s, a) = -Q(s, a) + C_{\text{PUCT}} \cdot P(s, a) \cdot \frac{\sqrt{N(parent)}}{1 + N(child)}$$
+$$U(s, a) = -Q(s, a) + C_{\text{PUCT}} \cdot P(s, a) \cdot \frac{\sqrt{N(\text{parent})}}{1 + N(\text{child})}$$
 where $C_{\text{PUCT}} = 1.5$ balances exploration against high-prior policy moves $P(s, a)$.
 
 ---
