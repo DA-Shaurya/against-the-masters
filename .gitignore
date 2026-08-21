@@ -1,0 +1,15 @@
+# Temporary & Scratch Files
+scratch/
+*.log
+.tempmediaStorage/
+.user_uploaded/
+
+# System / OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE Files
+.vscode/
+.idea/
+*.swp

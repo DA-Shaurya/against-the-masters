@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment 3: JavaScript Form Validation</title>
+    <style>
+        /* General Body & Layout Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px 0;
+            box-sizing: border-box;
+        }
+
+        /* Main Form Card Styling */
+        .form-card {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(50, 50, 93, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border-top: 5px solid #6a82fb;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        /* Form Control Grouping */
+        .form-control {
+            margin-bottom: 20px;
+            text-align: left;
+            position: relative;
+        }
+
+        /* Input Field Styling */
+        .form-control input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-control input:focus {
+            outline: none;
+            border-color: #6a82fb;
+            box-shadow: 0 0 0 3px rgba(106, 130, 251, 0.2);
+        }
+
+        /* Validation State Styling */
+        .form-control.success input {
+            border-color: #28a745;
+        }
+
+        .form-control.error input {
+            border-color: #dc3545;
+        }
+
+        /* Error Message Styling */
+        .form-control .error-message {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none; /* Hidden by default */
+            height: 15px;
+        }
+
+        .form-control.error .error-message {
+            display: block; /* Shown when there is an error */
+        }
+
+        /* Submit Button Styling */
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: #6a82fb;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #5a72e6;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Success Message Styling */
+        #success-message {
+            color: #28a745;
+            font-weight: 600;
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+        }
+
+        /* Explanation Section Styling */
+        .explanation-card {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .explanation-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .explanation-card code {
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Registration Form Card -->
+    <div class="form-card">
+        <h2>User Registration</h2>
+        <form id="registration-form" novalidate>
+            <!-- Name Field -->
+            <div class="form-control">
+                <input type="text" id="name" placeholder="Full Name">
+                <div class="error-message" id="name-error"></div>
+            </div>
+            <!-- Email Field -->
+            <div class="form-control">
+                <input type="email" id="email" placeholder="Email Address">
+                <div class="error-message" id="email-error"></div>
+            </div>
+            <!-- Phone Field -->
+            <div class="form-control">
+                <input type="tel" id="phone" placeholder="Phone Number (10 digits)">
+                <div class="error-message" id="phone-error"></div>
+            </div>
+            <!-- Password Field -->
+            <div class="form-control">
+                <input type="password" id="password" placeholder="Password">
+                <div class="error-message" id="password-error"></div>
+            </div>
+            <!-- Submit Button -->
+            <button type="submit" class="submit-btn">Register</button>
+        </form>
+        <!-- Success Message Container -->
+        <div id="success-message">Registration Successful!</div>
+    </div>
+
+    <!-- Explanation Section -->
+    <div class="explanation-card">
+        <h3>About This Assignment</h3>
+        <p>
+            <strong>What is Client-Side Validation?</strong><br>
+            Client-side validation is the process of checking user input in the browser *before* it is sent to the server. It provides immediate feedback to the user, improving the user experience by catching errors early. This reduces unnecessary server load and makes the application feel more responsive.
+        </p>
+        <p>
+            <strong>Why is RegEx used?</strong><br>
+            Regular Expressions (RegEx) are powerful patterns used to match character combinations in strings. They are ideal for validating complex input formats like emails, phone numbers, or password strength requirements. For example, <code>/^\d{10}$/</code> checks if a string contains exactly 10 digits, which is perfect for a phone number.
+        </p>
+        <p>
+            <strong>How does event.preventDefault() work?</strong><br>
+            When an event occurs (like a form submission), the browser has a default action it wants to perform (like reloading the page and sending data). The <code>event.preventDefault()</code> method, when called inside an event listener, tells the browser to stop this default action. In this form, we use it to prevent the form from submitting if validation fails, allowing our JavaScript to handle the errors instead.
+        </p>
+    </div>
+
+    <script>
+        // --- DOM Element Selection ---
+        const form = document.getElementById('registration-form');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phone');
+        const passwordInput = document.getElementById('password');
+        const successMessage = document.getElementById('success-message');
+
+        // --- Helper Functions for Validation UI ---
+
+        /**
+         * Sets an error state for an input field.
+         * @param {HTMLInputElement} input - The input element to apply the error to.
+         * @param {string} message - The error message to display.
+         */
+        function setError(input, message) {
+            const formControl = input.parentElement;
+            const errorMessage = formControl.querySelector('.error-message');
+
+            formControl.classList.add('error');
+            formControl.classList.remove('success');
+            errorMessage.textContent = message;
+        }
+
+        /**
+         * Sets a success state for an input field.
+         * @param {HTMLInputElement} input - The input element to apply the success state to.
+         */
+        function setSuccess(input) {
+            const formControl = input.parentElement;
+            const errorMessage = formControl.querySelector('.error-message');
+
+            formControl.classList.add('success');
+            formControl.classList.remove('error');
+            errorMessage.textContent = ''; // Clear error message
+        }
+
+        // --- Validation Logic Functions ---
+
+        /**
+         * Validates the name field.
+         * @returns {boolean} - True if valid, false otherwise.
+         */
+        function validateName() {
+            const nameValue = nameInput.value.trim();
+            const nameRegex = /^[A-Za-z\s]+$/;
+
+            if (nameValue === '') {
+                setError(nameInput, 'Name cannot be empty.');
+                return false;
+            }
+            if (nameValue.length < 3) {
+                setError(nameInput, 'Name must be at least 3 characters.');
+                return false;
+            }
+            if (!nameRegex.test(nameValue)) {
+                setError(nameInput, 'Name can only contain alphabets and spaces.');
+                return false;
+            }
+            setSuccess(nameInput);
+            return true;
+        }
+
+        /**
+         * Validates the email field.
+         * @returns {boolean} - True if valid, false otherwise.
+         */
+        function validateEmail() {
+            const emailValue = emailInput.value.trim();
+            // A standard, simple regex for email validation
+            const emailRegex = /^\S+@\S+\.\S+$/;
+
+            if (emailValue === '') {
+                setError(emailInput, 'Email cannot be empty.');
+                return false;
+            }
+            if (!emailRegex.test(emailValue)) {
+                setError(emailInput, 'Please enter a valid email address.');
+                return false;
+            }
+            setSuccess(emailInput);
+            return true;
+        }
+
+        /**
+         * Validates the phone number field.
+         * @returns {boolean} - True if valid, false otherwise.
+         */
+        function validatePhone() {
+            const phoneValue = phoneInput.value.trim();
+            const phoneRegex = /^\d{10}$/; // Exactly 10 digits
+
+            if (phoneValue === '') {
+                setError(phoneInput, 'Phone number cannot be empty.');
+                return false;
+            }
+            if (!phoneRegex.test(phoneValue)) {
+                setError(phoneInput, 'Phone number must be exactly 10 digits.');
+                return false;
+            }
+            setSuccess(phoneInput);
+            return true;
+        }
+
+        /**
+         * Validates the password field.
+         * @returns {boolean} - True if valid, false otherwise.
+         */
+        function validatePassword() {
+            const passwordValue = passwordInput.value.trim();
+            const errors = [];
+
+            if (passwordValue.length < 8) {
+                errors.push('at least 8 characters');
+            }
+            if (!/[A-Z]/.test(passwordValue)) {
+                errors.push('one uppercase letter');
+            }
+            if (!/[a-z]/.test(passwordValue)) {
+                errors.push('one lowercase letter');
+            }
+            if (!/[0-9]/.test(passwordValue)) {
+                errors.push('one number');
+            }
+
+            if (errors.length > 0) {
+                setError(passwordInput, `Password needs ${errors.join(', ')}.`);
+                return false;
+            }
+            setSuccess(passwordInput);
+            return true;
+        }
+
+        // --- Event Listeners ---
+
+        // Real-time validation on input event
+        nameInput.addEventListener('input', validateName);
+        emailInput.addEventListener('input', validateEmail);
+        phoneInput.addEventListener('input', validatePhone);
+        passwordInput.addEventListener('input', validatePassword);
+
+        // Form submission handler
+        form.addEventListener('submit', function (event) {
+            // 1. Prevent the default form submission behavior
+            event.preventDefault();
+
+            // 2. Run all validations to check the final state
+            const isNameValid = validateName();
+            const isEmailValid = validateEmail();
+            const isPhoneValid = validatePhone();
+            const isPasswordValid = validatePassword();
+
+            // 3. Check if the entire form is valid
+            const isFormValid = isNameValid && isEmailValid && isPhoneValid && isPasswordValid;
+
+            if (isFormValid) {
+                // 4. If valid, show success message and reset the form
+                successMessage.style.display = 'block';
+                form.reset();
+
+                // Remove all success/error classes
+                [nameInput, emailInput, phoneInput, passwordInput].forEach(input => {
+                    input.parentElement.classList.remove('success', 'error');
+                });
+
+                // Hide success message after a few seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000);
+            } else {
+                // 5. If invalid, hide success message (in case it was visible)
+                successMessage.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

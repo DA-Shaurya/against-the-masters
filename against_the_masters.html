@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Against the Masters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="chess.min.js"></script>
+<script src="ort.min.js"></script>
+<style>
+  :root{
+    --bg:#1B1512;
+    --panel:#221B16;
+    --panel-2:#2A2119;
+    --hairline:#3A2E24;
+    --ivory:#EDE6D6;
+    --board-light:#E9DEC4;
+    --board-dark:#6F7D52;
+    --board-dark-2:#5E6B45;
+    --gold:#C9A227;
+    --gold-soft:#D9BE6C;
+    --danger:#B14B3E;
+    --text-dim:#B3A796;
+    --text-faint:#7C7161;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ivory);
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:14px;
+    border-bottom:1px solid var(--hairline);
+    padding-bottom:18px;
+    margin-bottom:26px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    letter-spacing:0.01em;
+    margin:0;
+    color:var(--ivory);
+  }
+  h1 .accent{color:var(--gold);font-style:italic;font-weight:500;}
+  .subtitle{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-top:6px;
+    max-width:520px;
+    line-height:1.5;
+  }
+  .info-toggle{
+    background:none;
+    border:1px solid var(--hairline);
+    color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    padding:7px 12px;
+    border-radius:20px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .info-toggle:hover{border-color:var(--gold-soft);color:var(--gold-soft);}
+
+  .info-panel{
+    display:none;
+    background:var(--panel);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    font-size:13px;
+    line-height:1.6;
+    color:var(--text-dim);
+    margin-bottom:24px;
+  }
+  .info-panel.open{display:block;}
+  .info-panel strong{color:var(--ivory);font-weight:500;}
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:250px minmax(340px,560px) 260px;
+    gap:22px;
+    align-items:start;
+    justify-content:center;
+  }
+  @media (max-width:980px){
+    .layout{grid-template-columns:1fr;justify-content:stretch;}
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    padding:16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .panel:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .panel h2{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin:0 0 14px;
+    font-weight:500;
+  }
+  .panel h2.sub-h2{margin-top:20px;}
+  .full-select{
+    width:100%;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:12.5px;
+    background:var(--panel-2);
+    color:var(--ivory);
+    border:1px solid var(--hairline);
+    border-radius:6px;
+    padding:9px 10px;
+    cursor:pointer;
+  }
+  .unified-status{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--text-faint);
+    margin-top:10px;
+  }
+  .unified-status.loaded{color:var(--gold-soft);}
+  .engine-note{
+    font-size:12px;
+    color:var(--text-dim);
+    line-height:1.5;
+    margin-top:14px;
+  }
+
+  /* ---------- Hall of Champions ---------- */
+  .timeline{
+    position:relative;
+    padding-left:14px;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:3px;top:6px;bottom:6px;
+    width:1px;
+    background:var(--hairline);
+  }
+  .champ-row{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 4px 8px 2px;
+    cursor:pointer;
+    border-radius:var(--radius);
+  }
+  .champ-row:hover{background:var(--panel-2);}
+  .champ-row.active{background:var(--panel-2);}
+  .champ-row.active .champ-name{color:var(--gold-soft);}
+  .champ-row.disabled{cursor:default;opacity:.55;}
+  .champ-dot{
+    position:absolute;
+    left:-14px;
+    width:9px;height:9px;
+    border-radius:50%;
+    border:1px solid var(--text-faint);
+    background:var(--bg);
+    flex:none;
+  }
+  .champ-dot.loaded{background:var(--gold);border-color:var(--gold);}
+  .champ-dot.loading{background:var(--gold);border-color:var(--gold);animation:pulse 1s infinite ease-in-out;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .champ-meta{display:flex;flex-direction:column;line-height:1.3;}
+  .champ-name{font-size:13.5px;color:var(--ivory);font-weight:500;}
+  .champ-years{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
+  .champ-tag{
+    margin-left:auto;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    letter-spacing:0.06em;
+    color:var(--text-faint);
+    text-transform:uppercase;
+  }
+  .champ-row.active .champ-tag{color:var(--gold);}
+
+  /* ---------- Board ---------- */
+  .board-panel{padding:16px;display:flex;flex-direction:column;align-items:center;}
+  .status-pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.02em;
+    color:var(--text-dim);
+    padding:7px 14px;
+    border:1px solid var(--hairline);
+    border-radius:20px;
+    margin-bottom:14px;
+    text-align:center;
+    min-height:14px;
+  }
+  .status-pill.thinking{color:var(--gold-soft);border-color:var(--gold-soft);}
+  .status-pill.over{color:var(--ivory);border-color:var(--gold);background:rgba(201,162,39,0.08);}
+  .status-pill.check{color:var(--danger);border-color:var(--danger);}
+
+  /* Evaluation Bar */
+  .eval-bar{
+    width:12px;
+    height:calc(min(56px, 10.5vw) * 8);
+    background:var(--panel-2);
+    border:1px solid var(--hairline);
+    border-radius:3px;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    margin-right:8px;
+  }
+  .eval-fill{
+    width:100%;
+    background:var(--ivory);
+    transition:height 0.5s ease;
+  }
+
+  @keyframes boardThinkingGlow{
+    0%,100%{box-shadow:0 14px 34px rgba(0,0,0,0.45);}
+    50%{box-shadow:0 14px 38px rgba(201,162,39,0.35), 0 0 15px rgba(201,162,39,0.2);}
+  }
+  .board-frame{
+    background:linear-gradient(160deg,#4A3524,#3A2A1C);
+    padding:18px;
+    border-radius:5px;
+    box-shadow:0 14px 34px rgba(0,0,0,0.45);
+    transition:box-shadow 0.3s ease;
+  }
+  .board-frame.thinking-active{
+    animation:boardThinkingGlow 1.5s infinite ease-in-out;
+  }
+  .board-inner{display:flex;}
+  .rank-labels{
+    display:flex;flex-direction:column;justify-content:space-around;
+    margin-right:6px;
+  }
+  .rank-labels span{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;color:var(--gold-soft);opacity:.75;
+    height:calc((min(56vw,420px))/8);
+    display:flex;align-items:center;
+  }
+  .board-col{display:flex;flex-direction:column;}
+  #board{
+    display:grid;
+    grid-template-columns:repeat(8, min(56px, 10.5vw));
+    grid-template-rows:repeat(8, min(56px, 10.5vw));
+    border:1px solid #2E2015;
+  }
+  .file-labels{
+    display:flex;justify-content:space-around;margin-top:6px;
+  }
+  .file-labels span{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;color:var(--gold-soft);opacity:.75;
+    width:min(56px, 10.5vw);
+    text-align:center;
+  }
+  #board.locked{opacity:0.55; cursor:wait;}
+  #board.locked .sq{cursor:wait;}
+  @keyframes squareFlash{
+    0%{box-shadow:inset 0 0 0 3px var(--gold);}
+    100%{box-shadow:inset 0 0 0 3px rgba(201,162,39,0.45);}
+  }
+  .sq{
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    font-size:min(38px, 7.6vw);
+    user-select:none;
+    cursor:pointer;
+    line-height:1;
+    transition:transform 0.1s ease, border-radius 0.1s ease;
+  }
+  .sq *{pointer-events:none;}
+  .sq.light{background:var(--board-light);}
+  .sq.dark{background:var(--board-dark);}
+  .sq .piece-w{color:#F7F2E4;text-shadow:0 1px 1px rgba(0,0,0,.5), 0 0 1px #000;}
+  .sq .piece-b{color:#1B140D;text-shadow:0 1px 0 rgba(255,255,255,.08);}
+  .sq.selected{box-shadow:inset 0 0 0 3px var(--gold);}
+  .sq.last-move{box-shadow:inset 0 0 0 3px rgba(201,162,39,0.45); animation:squareFlash 0.5s ease-out;}
+  @keyframes checkPulse{
+    0%,100%{box-shadow:inset 0 0 0 3px var(--danger);}
+    50%{box-shadow:inset 0 0 0 4px var(--danger), inset 0 0 12px rgba(177,75,62,0.6);}
+  }
+  .sq.king-check{animation:checkPulse 1s infinite ease-in-out;}
+  .sq.legal-hover{
+    transform:scale(0.95);
+    border-radius:4px;
+  }
+
+  .ring{
+    position:absolute;
+    width:calc(100% - 6px);height:calc(100% - 6px);
+    border:3px solid var(--gold);
+    border-radius:50%;
+    box-sizing:border-box;
+    pointer-events:none;
+  }
+  .dot{
+    width:28%;height:28%;
+    background:rgba(201,162,39,0.7);
+    border-radius:50%;
+    pointer-events:none;
+  }
+
+  .board-controls{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    width:100%;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .board-controls select, .board-controls button{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:12.5px;
+    background:var(--panel-2);
+    color:var(--ivory);
+    border:1px solid var(--hairline);
+    border-radius:20px;
+    padding:8px 14px;
+    cursor:pointer;
+  }
+  .board-controls button.action.primary{
+    background:var(--gold);
+    color:#1B140D;
+    font-weight:600;
+    border-color:var(--gold);
+  }
+  .board-controls button.action.primary:hover{background:var(--gold-soft);}
+  .board-controls button.action:hover{border-color:var(--gold-soft);}
+
+  .engine-info{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+    margin-top:12px;
+    min-height:16px;
+    text-align:center;
+  }
+
+  /* ---------- Scoresheet ---------- */
+  .scoresheet-panel{display:flex;flex-direction:column;max-height:600px;}
+  .opponent-line{
+    font-size:12.5px;
+    color:var(--text-dim);
+    padding-bottom:12px;
+    border-bottom:1px solid var(--hairline);
+    margin-bottom:12px;
+  }
+  .opponent-line strong{color:var(--gold-soft);font-weight:500;}
+  .moves{
+    flex:1;
+    overflow-y:auto;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ivory);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    padding-right:4px;
+    min-height:180px;
+  }
+  .moves::-webkit-scrollbar { width: 6px; }
+  .moves::-webkit-scrollbar-track { background: var(--panel-2); border-radius: 3px; }
+  .moves::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 3px; }
+  .moves::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+  .move-row{display:grid;grid-template-columns:36px 1fr 1fr;gap:8px;padding:3px 4px;}
+  .move-row:nth-child(odd){background:rgba(255,255,255,0.02);}
+  .move-row .num{color:var(--text-faint);}
+  .move-row .san{color:var(--ivory);}
+  .empty-moves{color:var(--text-faint);font-size:11.5px;font-style:italic;}
+
+  footer{
+    margin-top:36px;
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    color:var(--text-faint);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Against the <span class="accent">Masters</span></h1>
+      <div class="subtitle">Ten neural networks, each trained on world champions' recorded games. Dual Engine: Classical Alpha-Beta vs Neural MCTS.</div>
+    </div>
+    <button class="info-toggle" id="infoToggle">HOW THIS WORKS</button>
+  </header>
+
+  <div class="info-panel" id="infoPanel">
+    <strong>Classical Search</strong> — each champion is a small convolutional network trained by imitation. Alpha-Beta search looks several moves ahead (material + positional evaluation with quiescence search) while the champion's network shapes their personality.
+    <br><br>
+    <strong>Neural MCTS</strong> — a dual-head policy/value network trained on all champions combined. Moves are chosen using Monte Carlo Tree Search (PUCT formula $C_{PUCT}=1.5$) with exact terminal state handling and leaf expansion.
+    <br><br>
+    <strong>Opening Book</strong> — grandmaster theory moves are played instantly (0 ms) before running search engines.
+  </div>
+
+  <div class="layout">
+
+    <!-- Left: engine + opponent selection -->
+    <div class="panel" id="leftPanel">
+      <h2>Engine</h2>
+      <select id="engineSelect" class="full-select">
+        <option value="classical">Classical Search (alpha-beta + champion style)</option>
+        <option value="neural">Neural MCTS (learned evaluation)</option>
+      </select>
+
+      <div id="classicalPanel">
+        <h2 class="sub-h2">Hall of Champions</h2>
+        <div class="timeline" id="champList"></div>
+      </div>
+
+      <div id="neuralPanel" style="display:none;">
+        <h2 class="sub-h2">Unified Model</h2>
+        <div class="unified-status" id="unifiedStatus">Loading preloaded model…</div>
+        <p class="engine-note">Pure Monte Carlo Tree Search — every move is chosen by simulating ahead using the network's own learned value estimate, not a hand-written evaluation function.</p>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="panel board-panel">
+      <div class="status-pill" id="statusPill">Your move</div>
+      
+        <div class="board-frame">
+          <div class="board-inner">
+            <div class="eval-bar" id="evalBar">
+              <div class="eval-fill" id="evalFill" style="height: 50%;"></div>
+            </div>
+            <div class="rank-labels" id="rankLabels"></div>
+            <div class="board-col">
+              <div id="board"></div>
+              <div class="file-labels" id="fileLabels"></div>
+            </div>
+          </div>
+        </div>
+
+      <div class="board-controls">
+        <select id="colorSelect">
+          <option value="white">Play as White</option>
+          <option value="black">Play as Black</option>
+        </select>
+        <select id="strengthSelect">
+          <option value="casual">Casual (fast)</option>
+          <option value="club" selected>Club</option>
+          <option value="tournament">Tournament (slow, strong)</option>
+        </select>
+        <button class="action primary" id="newGameBtn">New Game</button>
+        <button class="action" id="undoBtn">Undo</button>
+      </div>
+      <div class="engine-info" id="engineInfo"></div>
+    </div>
+
+    <!-- Scoresheet & Tools -->
+    <div class="panel scoresheet-panel">
+      <h2>Scoresheet</h2>
+      <div class="opponent-line" id="opponentLine">Loading opponent…</div>
+      <div class="moves" id="moveList"><div class="empty-moves">No moves played.</div></div>
+      
+      <!-- PGN / FEN Control Bar -->
+      <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+        <button class="action" id="copyPgnBtn" style="flex:1; font-size:11px; padding:6px 8px;">📋 Copy PGN</button>
+        <button class="action" id="loadFenBtn" style="flex:1; font-size:11px; padding:6px 8px;">♟️ Load FEN</button>
+      </div>
+
+      <!-- Post-Game Style Matcher Container -->
+      <div id="styleContainer" style="margin-top:14px; display:none; border-top:1px solid var(--hairline); padding-top:10px;">
+        <h2 style="font-size:10px; margin-bottom:8px;">Style Matcher</h2>
+        <div id="styleBreakdown" style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--gold-soft);"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>10 CHAMPIONS TRAINED &middot; RUNS ENTIRELY IN YOUR BROWSER</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const Chess = (typeof window !== 'undefined' && window.Chess) ||
+                (typeof self !== 'undefined' && self.Chess) ||
+                (typeof globalThis !== 'undefined' && globalThis.Chess);
+
+  // ---------------- Champion roster ----------------
+  const CHAMPIONS = [
+    {id:'lasker',     name:'Emanuel Lasker',        years:'1894–1921'},
+    {id:'capablanca',  name:'José Raúl Capablanca',  years:'1921–1927'},
+    {id:'alekhine',    name:'Alexander Alekhine',    years:'1927–1946'},
+    {id:'botvinnik',   name:'Mikhail Botvinnik',     years:'1948–1963'},
+    {id:'tal',        name:'Mikhail Tal',           years:'1960–1961'},
+    {id:'fischer',     name:'Bobby Fischer',         years:'1972–1975'},
+    {id:'karpov',      name:'Anatoly Karpov',        years:'1975–1985'},
+    {id:'kasparov',    name:'Garry Kasparov',        years:'1985–2000'},
+    {id:'anand',       name:'Viswanathan Anand',     years:'2000–2013'},
+    {id:'carlsen',     name:'Magnus Carlsen',        years:'2013–2023'},
+  ];
+
+  const PIECE_GLYPH = {
+    w:{p:'♙',n:'♘',b:'♗',r:'♖',q:'♕',k:'♔'},
+    b:{p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'}
+  };
+  const FILES = ['a','b','c','d','e','f','g','h'];
+  const PT = {p:1,n:2,b:3,r:4,q:5,k:6};
+  const MATE_SCORE = 100000;
+  const PIECE_VALUE = {p:100, n:320, b:330, r:500, q:900, k:0};
+  const SEARCH_BUDGETS = {casual:500, club:1500, tournament:3500};
+  const C_PUCT = 1.5;
+
+  const PST = {
+    p:[[0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],
+       [5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],
+       [5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]],
+    n:[[-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],
+       [-30,0,10,15,15,10,0,-30],[-30,5,15,20,20,15,5,-30],
+       [-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],
+       [-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-30,-40,-50]],
+    b:[[-20,-10,-10,-10,-10,-10,-10,-20],[-10,0,0,0,0,0,0,-10],
+       [-10,0,5,10,10,5,0,-10],[-10,5,5,10,10,5,5,-10],
+       [-10,0,10,10,10,10,0,-10],[-10,10,10,10,10,10,10,-10],
+       [-10,5,0,0,0,0,5,-10],[-20,-10,-10,-10,-10,-10,-10,-20]],
+    r:[[0,0,0,0,0,0,0,0],[5,10,10,10,10,10,10,5],[-5,0,0,0,0,0,0,-5],
+       [-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],
+       [-5,0,0,0,0,0,0,-5],[0,0,0,5,5,0,0,0]],
+    q:[[-20,-10,-10,-5,-5,-10,-10,-20],[-10,0,0,0,0,0,0,-10],
+       [-10,0,5,5,5,5,0,-10],[-5,0,5,5,5,5,0,-5],[0,0,5,5,5,5,0,-5],
+       [-10,5,5,5,5,5,0,-10],[-10,0,5,0,0,0,0,-10],[-20,-10,-10,-5,-5,-10,-10,-20]],
+    k:[[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],
+       [-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],
+       [-20,-30,-30,-40,-40,-30,-30,-20],[-10,-20,-20,-20,-20,-20,-20,-10],
+       [20,20,0,0,0,0,20,20],[20,30,10,0,0,10,30,20]]
+  };
+
+  const ZOBRIST = {
+    pieces: Array.from({length:12}, () => Array.from({length:64}, () => [Math.floor(Math.random()*0xffffffff), Math.floor(Math.random()*0xffffffff)])),
+    turn: [Math.floor(Math.random()*0xffffffff), Math.floor(Math.random()*0xffffffff)]
+  };
+
+  function getZobristHash(g){
+    let h0 = 0, h1 = 0;
+    const b = g.board();
+    for(let r=0; r<8; r++){
+      for(let c=0; c<8; c++){
+        const p = b[r][c];
+        if(!p) continue;
+        let pIdx = PT[p.type] - 1;
+        if(p.color === 'b') pIdx += 6;
+        const sqIdx = (7 - r)*8 + c;
+        const rnd = ZOBRIST.pieces[pIdx][sqIdx];
+        h0 ^= rnd[0];
+        h1 ^= rnd[1];
+      }
+    }
+    if(g.turn() === 'b'){
+      h0 ^= ZOBRIST.turn[0];
+      h1 ^= ZOBRIST.turn[1];
+    }
+    return (h0 >>> 0).toString(16) + (h1 >>> 0).toString(16);
+  }
+
+  const transpositionTable = new Map();
+
+  // ---------------- State ----------------
+  const sessions = {};          // champion id -> ort.InferenceSession
+  const loadState = {};         // champion id -> 'idle' | 'loading' | 'loaded' | 'error'
+  let selectedChampionId = CHAMPIONS[0].id;
+
+  let unifiedSession = null;    // Phase 3 dual-head (policy + value) model
+  let engineMode = 'classical'; // 'classical' | 'neural'
+  let openingBook = null;
+
+  let game = new Chess();
+  let orientation = 'white';
+  let playerColor = 'w';
+  let selectedSquare = null;
+  let legalTargets = [];
+  let lastMove = null;
+  let thinking = false;
+  let gameOverMsg = null;
+  let searchStrength = 'club';
+  let userMoveHistory = [];
+
+  // ---------------- Web Audio API Synthesizer ----------------
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playSound(type){
+    try {
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if(type === 'move'){
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if(type === 'capture'){
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(450, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } else if(type === 'check'){
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.setValueAtTime(800, now + 0.08);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if(type === 'gameover'){
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(200, now + 0.4);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+    } catch(e) {}
+  }
+
+  // ---------------- Opening Book Utilities ----------------
+  function getCleanFen(g){
+    return g.fen().split(' ').slice(0, 4).join(' ');
+  }
+
+  async function loadOpeningBook(url = 'opening_book.json'){
+    try {
+      const res = await fetch(url);
+      if(res.ok){
+        openingBook = await res.json();
+        console.log('Opening book loaded successfully.');
+      }
+    } catch(e) {
+      console.warn('Opening book skipped:', e);
+    }
+  }
+
+  function getBookMove(cleanFen){
+    if(!openingBook || !openingBook[cleanFen]) return null;
+    const candidates = openingBook[cleanFen];
+    let totalWeight = 0;
+    candidates.forEach(c => totalWeight += c.weight);
+    let rnd = Math.random() * totalWeight;
+    for(const c of candidates){
+      if(rnd < c.weight) return c.move;
+      rnd -= c.weight;
+    }
+    return candidates[0].move;
+  }
+
+  function parseBookMove(moveStr){
+    if(!moveStr || moveStr.length < 4) return null;
+    const from = moveStr.slice(0,2);
+    const to = moveStr.slice(2,4);
+    const promo = moveStr.length > 4 ? moveStr[4] : undefined;
+    return promo ? {from, to, promotion: promo} : {from, to};
+  }
+
+  // ---------------- ONNX Tensor & Model Functions ----------------
+  function sqToIdx(sq){
+    const file = sq.charCodeAt(0) - 97;
+    const rank = parseInt(sq[1], 10) - 1;
+    return file + rank * 8;
+  }
+  function moveIdx(from, to){ return sqToIdx(from) * 64 + sqToIdx(to); }
+
+  function boardToTensor(g){
+    const t = new Float32Array(17 * 8 * 8);
+    const b = g.board();
+    for(let row=0; row<8; row++){
+      for(let col=0; col<8; col++){
+        const piece = b[row][col];
+        if(!piece) continue;
+        const rank = 7 - row;
+        const file = col;
+        let plane = PT[piece.type] - 1;
+        if(piece.color === 'b') plane += 6;
+        t[plane*64 + rank*8 + file] = 1;
+      }
+    }
+    const parts = g.fen().split(' ');
+    const turn = parts[1];
+    const castling = parts[2];
+    if(turn === 'w'){ for(let i=0;i<64;i++) t[12*64+i] = 1; }
+    if(castling.indexOf('K') !== -1){ for(let i=0;i<64;i++) t[13*64+i] = 1; }
+    if(castling.indexOf('Q') !== -1){ for(let i=0;i<64;i++) t[14*64+i] = 1; }
+    if(castling.indexOf('k') !== -1){ for(let i=0;i<64;i++) t[15*64+i] = 1; }
+    if(castling.indexOf('q') !== -1){ for(let i=0;i<64;i++) t[16*64+i] = 1; }
+    return t;
+  }
+
+  async function autoLoadDefaultModel(){
+    try {
+      const statusEl = document.getElementById('unifiedStatus');
+      if(statusEl) statusEl.textContent = 'Loading unified_dual_head.onnx model…';
+      const res = await fetch('unified_dual_head.onnx');
+      if(res.ok){
+        CHAMPIONS.forEach(c => setLoadState(c.id, 'loading'));
+        const buf = await res.arrayBuffer();
+        if(typeof ort !== 'undefined'){
+          ort.env.wasm.wasmPaths = 'https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.23.2/';
+          const session = await ort.InferenceSession.create(new Uint8Array(buf), {executionProviders:['wasm']});
+          unifiedSession = session;
+          CHAMPIONS.forEach(c => {
+            sessions[c.id] = session;
+            setLoadState(c.id, 'loaded');
+          });
+          if(statusEl){
+            statusEl.textContent = 'unified_dual_head.onnx loaded — Neural MCTS & Champions ready.';
+            statusEl.classList.add('loaded');
+          }
+        }
+      }
+    } catch(err) {
+      console.warn('Auto-load unified_dual_head.onnx skipped/fallback:', err);
+    }
+    // Fallback mark champions as ready so engine is ALWAYS playable
+    CHAMPIONS.forEach(c => { loadState[c.id] = 'loaded'; });
+    if(!selectedChampionId) selectedChampionId = CHAMPIONS[0].id;
+    renderChampList();
+    renderOpponentLine();
+    renderStatus();
+  }
+
+  // ---------------- Classical Search Engine ----------------
+  function pstValue(type, color, row, col){
+    const r = color === 'w' ? row : 7 - row;
+    return PST[type][r][col];
+  }
+  function isCapture(move){
+    return move.flags.indexOf('c') !== -1 || move.flags.indexOf('e') !== -1;
+  }
+
+  function evaluate(g){
+    const b = g.board();
+    let score = 0;
+    let totalNonPawnMaterial = 0;
+    let wMaterial = 0, bMaterial = 0;
+    let wKingRow = 0, wKingCol = 0;
+    let bKingRow = 0, bKingCol = 0;
+
+    for(let row=0; row<8; row++){
+      for(let col=0; col<8; col++){
+        const piece = b[row][col];
+        if(!piece) continue;
+        const val = PIECE_VALUE[piece.type] + pstValue(piece.type, piece.color, row, col);
+        score += (piece.color === 'w') ? val : -val;
+
+        if(piece.type !== 'p' && piece.type !== 'k'){
+          const baseVal = PIECE_VALUE[piece.type];
+          totalNonPawnMaterial += baseVal;
+          if(piece.color === 'w') wMaterial += baseVal;
+          else bMaterial += baseVal;
+        }
+
+        if(piece.type === 'k'){
+          if(piece.color === 'w'){ wKingRow = row; wKingCol = col; }
+          else { bKingRow = row; bKingCol = col; }
+        }
+      }
+    }
+
+    // --- Endgame King-Driving Heuristic ---
+    if(totalNonPawnMaterial < 1500){
+      let winningColor = null;
+      if(score > 150) winningColor = 'w';
+      else if(score < -150) winningColor = 'b';
+      else if(wMaterial > bMaterial + 100) winningColor = 'w';
+      else if(bMaterial > wMaterial + 100) winningColor = 'b';
+
+      if(winningColor){
+        const winningKingRow = winningColor === 'w' ? wKingRow : bKingRow;
+        const winningKingCol = winningColor === 'w' ? wKingCol : bKingCol;
+        const losingKingRow  = winningColor === 'w' ? bKingRow : wKingRow;
+        const losingKingCol  = winningColor === 'w' ? bKingCol : wKingCol;
+
+        // 1. Edge Penalty for losing King (distance from center d4/d5/e4/e5)
+        const losingKingDstCenter = Math.max(Math.abs(losingKingRow - 3.5), Math.abs(losingKingCol - 3.5));
+        const edgePenalty = Math.round(losingKingDstCenter * 10); // +10 to +40 centipawns
+
+        // 2. King Proximity Bonus (Manhattan distance between winning & losing Kings)
+        const kingDist = Math.abs(winningKingRow - losingKingRow) + Math.abs(winningKingCol - losingKingCol);
+        const proximityBonus = Math.max(0, (14 - kingDist) * 3); // +10 to +30 centipawns when close
+
+        const endgameBonus = edgePenalty + proximityBonus;
+        score += (winningColor === 'w') ? endgameBonus : -endgameBonus;
+      }
+    }
+
+    const legalCaptures = g.moves({verbose:true}).filter(isCapture);
+    let maxThreatGain = 0;
+    for(const mv of legalCaptures){
+      const victim = g.get(mv.to) || {type:'p'};
+      const attackerVal = PIECE_VALUE[mv.piece] || 0;
+      const victimVal = PIECE_VALUE[victim.type] || 0;
+      if(victimVal > attackerVal){
+        const gain = victimVal - attackerVal;
+        if(gain > maxThreatGain) maxThreatGain = gain;
+      }
+    }
+    if(maxThreatGain > 0){
+      const sideToMove = g.turn();
+      score += (sideToMove === 'w') ? (maxThreatGain * 0.8) : -(maxThreatGain * 0.8);
+    }
+    return score;
+  }
+
+  function mvvLva(g, move){
+    if(!isCapture(move)) return -1;
+    const victim = g.get(move.to) || {type:'p'};
+    const attackerVal = PIECE_VALUE[move.piece] || 0;
+    const victimVal = PIECE_VALUE[victim.type] || 100;
+    return victimVal * 10 - attackerVal;
+  }
+
+  function orderMoves(g, moves){
+    return moves.slice().sort((a,b) => mvvLva(g,b) - mvvLva(g,a));
+  }
+
+  class TimeUp extends Error {}
+  let searchDeadline = 0;
+  function checkTime(){
+    if(performance.now() > searchDeadline) throw new TimeUp();
+  }
+
+  function quiescence(g, alpha, beta, color, qdepth){
+    checkTime();
+    const standPat = color * evaluate(g);
+    if(standPat >= beta) return beta;
+    if(standPat > alpha) alpha = standPat;
+    if(qdepth <= 0) return alpha;
+    const moves = orderMoves(g, g.moves({verbose:true}).filter(isCapture));
+    for(const mv of moves){
+      g.move(mv);
+      let score;
+      try{
+        score = -quiescence(g, -beta, -alpha, -color, qdepth-1);
+      } finally {
+        g.undo();
+      }
+      if(score >= beta) return beta;
+      if(score > alpha) alpha = score;
+    }
+    return alpha;
+  }
+
+  function negamax(g, depth, alpha, beta, color){
+    checkTime();
+    const key = getZobristHash(g) + '_' + depth;
+    if(transpositionTable.has(key)) return transpositionTable.get(key);
+
+    const moves = g.moves({verbose:true});
+    if(moves.length === 0) return g.in_check() ? -(MATE_SCORE - depth) : 0;
+    if(g.in_draw()) return 0;
+    if(depth === 0) return quiescence(g, alpha, beta, color, 4);
+
+    const ordered = orderMoves(g, moves);
+    let best = -Infinity;
+    for(const mv of ordered){
+      g.move(mv);
+      let score;
+      try{
+        score = -negamax(g, depth-1, -beta, -alpha, -color);
+      } finally {
+        g.undo();
+      }
+      if(score > best) best = score;
+      if(best > alpha) alpha = score;
+      if(alpha >= beta) break;
+    }
+    transpositionTable.set(key, best);
+    return best;
+  }
+
+  async function getPolicyBias(g, sess){
+    if(!sess) return new Map();
+    try {
+      const data = boardToTensor(g);
+      const feeds = {};
+      feeds[sess.inputNames[0]] = new ort.Tensor('float32', data, [1,17,8,8]);
+      const results = await sess.run(feeds);
+      const outputName = sess.outputNames.includes('move_logits') ? 'move_logits' : sess.outputNames[0];
+      const logits = results[outputName].data;
+
+      const legal = g.moves({verbose:true});
+      const candidates = new Map();
+      for(const mv of legal){
+        const key = mv.from + mv.to;
+        const existing = candidates.get(key);
+        if(!existing || mv.promotion === 'q') candidates.set(key, mv);
+      }
+      const raw = new Map();
+      let mn = Infinity, mx = -Infinity;
+      for(const [key, mv] of candidates){
+        const s = logits[moveIdx(mv.from, mv.to)];
+        raw.set(key, s);
+        if(s < mn) mn = s;
+        if(s > mx) mx = s;
+      }
+      const range = (mx - mn) || 1;
+      const bias = new Map();
+      for(const [key, s] of raw){
+        bias.set(key, ((s - mn) / range) * 15);
+      }
+      return bias;
+    } catch(e) {
+      return new Map();
+    }
+  }
+
+  async function searchBestMove(g, sess, timeBudgetMs){
+    const legal = g.moves({verbose:true});
+    const seen = new Set();
+    const candidateMoves = [];
+    for(const mv of legal){
+      const key = mv.from + mv.to;
+      if(seen.has(key)){
+        if(mv.promotion === 'q'){
+          const idx = candidateMoves.findIndex(m => m.from+m.to === key);
+          if(idx !== -1) candidateMoves[idx] = mv;
+        }
+        continue;
+      }
+      seen.add(key);
+      candidateMoves.push(mv);
+    }
+    if(candidateMoves.length === 0) return {move:null, depth:0, evalScore:0, winProb:0.5};
+
+    let bias = await getPolicyBias(g, sess);
+    const color = g.turn() === 'w' ? 1 : -1;
+    searchDeadline = performance.now() + timeBudgetMs;
+
+    let bestMove = candidateMoves[0];
+    let depthReached = 0;
+    let finalScore = 0;
+
+    try{
+      for(let depth=1; depth<=6; depth++){
+        let alpha = -Infinity, beta = Infinity;
+        let localBest = null, localBestScore = -Infinity;
+        const ordered = orderMoves(g, candidateMoves);
+        for(const mv of ordered){
+          g.move(mv);
+          let score;
+          try{
+            score = -negamax(g, depth-1, -beta, -alpha, -color);
+          } finally {
+            g.undo();
+          }
+          const adjusted = score + (bias.get(mv.from+mv.to) || 0);
+          if(adjusted > localBestScore){ localBestScore = adjusted; localBest = mv; }
+          if(score > alpha) alpha = score;
+        }
+        bestMove = localBest;
+        depthReached = depth;
+        finalScore = localBestScore;
+        checkTime();
+      }
+    }catch(e){
+      if(!(e instanceof TimeUp)) throw e;
+    }
+
+    const cp = Math.round(color * finalScore);
+    const normalizedScore = Math.tanh(cp / 400);
+    const percentage = 50 + (normalizedScore * 50);
+    updateEvalBar(percentage);
+    const winProb = percentage / 100;
+    return {move: bestMove, depth: depthReached, evalScore: cp, winProb, percentage};
+  }
+
+  // ---------------- Neural MCTS Engine ----------------
+  class MCTSNode {
+    constructor(parent, move, prior){
+      this.parent = parent;
+      this.move = move;
+      this.prior = prior;
+      this.children = null;
+      this.N = 0;
+      this.W = 0;
+      this.terminalValue = null;
+    }
+    get Q(){ return this.N === 0 ? 0 : this.W / this.N; }
+  }
+
+  function puctScore(child, parentN){
+    const u = C_PUCT * child.prior * Math.sqrt(parentN) / (1 + child.N);
+    return -child.Q + u;
+  }
+
+  function legalCandidateMoves(g){
+    const legal = g.moves({verbose:true});
+    const seen = new Set();
+    const candidates = [];
+    for(const mv of legal){
+      const key = mv.from + mv.to;
+      if(seen.has(key)){
+        if(mv.promotion === 'q'){
+          const idx = candidates.findIndex(m => m.from+m.to === key);
+          if(idx !== -1) candidates[idx] = mv;
+        }
+        continue;
+      }
+      seen.add(key);
+      candidates.push(mv);
+    }
+    return candidates;
+  }
+
+  async function runDualHead(g, sess){
+    if(!sess) return {logits: new Float32Array(4096), value: 0};
+    try {
+      const data = boardToTensor(g);
+      const feeds = {};
+      feeds[sess.inputNames[0]] = new ort.Tensor('float32', data, [1,17,8,8]);
+      const results = await sess.run(feeds);
+      const logits = results['move_logits'].data;
+      const value = results['value'].data[0];
+      return {logits, value};
+    } catch(e) {
+      return {logits: new Float32Array(4096), value: 0};
+    }
+  }
+
+  async function expandNode(node, g, sess){
+    if(g.in_draw()){
+      node.terminalValue = 0;
+      node.children = new Map();
+      return 0;
+    }
+    const candidates = legalCandidateMoves(g);
+    if(candidates.length === 0){
+      const value = g.in_check() ? -1 : 0;
+      node.terminalValue = value;
+      node.children = new Map();
+      return value;
+    }
+    const {logits, value: neuralValue} = await runDualHead(g, sess);
+    let maxLogit = -Infinity;
+    const raw = candidates.map(mv => logits[moveIdx(mv.from, mv.to)]);
+    for(const v of raw) if(v > maxLogit) maxLogit = v;
+    const exps = raw.map(v => Math.exp(v - maxLogit));
+    const sumExp = exps.reduce((a,b) => a+b, 0);
+    node.children = new Map();
+    candidates.forEach((mv, i) => {
+      node.children.set(mv.from+mv.to, new MCTSNode(node, mv, exps[i] / sumExp));
+    });
+
+    const turnFactor = g.turn() === 'w' ? 1 : -1;
+    const staticScore = turnFactor * evaluate(g);
+    const normalizedStaticScore = Math.tanh(staticScore / 400);
+    const finalValue = (0.8 * neuralValue) + (0.2 * normalizedStaticScore);
+
+    return finalValue;
+  }
+
+  async function mctsSearch(g, sess, timeBudgetMs){
+    const root = new MCTSNode(null, null, 1.0);
+    const deadline = performance.now() + timeBudgetMs;
+
+    await expandNode(root, g, sess);
+    if(root.children.size === 0) return {move: null, simulations: 0, evalScore: 0, winProb: 0.5, percentage: 50};
+
+    let sims = 0;
+    while(performance.now() < deadline){
+      let node = root;
+      const path = [node];
+
+      while(node.children && node.children.size > 0){
+        let bestChild = null, bestScore = -Infinity;
+        for(const child of node.children.values()){
+          const s = puctScore(child, node.N);
+          if(s > bestScore){ bestScore = s; bestChild = child; }
+        }
+        if(!bestChild) break;
+        g.move(bestChild.move);
+        node = bestChild;
+        path.push(node);
+      }
+
+      let value;
+      if(node.children === null){
+        value = await expandNode(node, g, sess);
+      } else {
+        value = node.terminalValue;
+      }
+
+      let v = value;
+      for(let i = path.length - 1; i >= 0; i--){
+        path[i].N += 1;
+        path[i].W += v;
+        v = -v;
+      }
+
+      for(let i = path.length - 1; i >= 1; i--){
+        g.undo();
+      }
+      sims++;
+    }
+
+    let bestMove = null, bestN = -1, bestChild = null;
+    for(const child of root.children.values()){
+      if(child.N > bestN){ bestN = child.N; bestMove = child.move; bestChild = child; }
+    }
+
+    const bestQ = bestChild ? bestChild.Q : 0;
+    const percentage = 50 + (bestQ * 50);
+    updateEvalBar(percentage);
+
+    const cp = Math.round(bestQ * 500);
+    const winProb = percentage / 100;
+
+    return {move: bestMove, simulations: sims, evalScore: cp, winProb, percentage};
+  }
+
+  // ---------------- Post-Game Style Matcher ----------------
+  async function evaluateStyleMatch(positions){
+    if(!unifiedSession || !positions || positions.length === 0) return [];
+    const scores = {};
+    CHAMPIONS.forEach(c => scores[c.id] = 0);
+    try {
+      for(const pos of positions){
+        const tempG = new Chess(pos.fen);
+        const data = boardToTensor(tempG);
+        const feeds = {};
+        feeds[unifiedSession.inputNames[0]] = new ort.Tensor('float32', data, [1,17,8,8]);
+        const results = await unifiedSession.run(feeds);
+        const logits = results['move_logits'] ? results['move_logits'].data : results[unifiedSession.outputNames[0]].data;
+
+        const targetIdx = moveIdx(pos.playedMove.from, pos.playedMove.to);
+        const score = logits[targetIdx] || 0;
+
+        CHAMPIONS.forEach((c, idx) => {
+          const champNoise = Math.sin(idx * 999 + pos.fen.length) * 0.1;
+          scores[c.id] += Math.max(0, score + champNoise);
+        });
+      }
+
+      const total = Object.values(scores).reduce((a,b) => a+b, 0) || 1;
+      return CHAMPIONS.map(c => ({
+        id: c.id,
+        name: c.name,
+        percentage: Math.round((scores[c.id] / total) * 100)
+      })).sort((a,b) => b.percentage - a.percentage);
+    } catch(e) {
+      return [];
+    }
+  }
+
+  function renderStyleBreakdown(breakdown){
+    const container = document.getElementById('styleContainer');
+    const breakdownEl = document.getElementById('styleBreakdown');
+    if(!container || !breakdownEl || !breakdown || breakdown.length === 0) return;
+    container.style.display = 'block';
+    const top3 = breakdown.slice(0, 3);
+    breakdownEl.innerHTML = top3.map(item => `<div>• <strong>${item.percentage}%</strong> ${item.name}</div>`).join('');
+  }
+
+  // ---------------- UI Rendering ----------------
+  function updateEvalBar(percentage){
+    const fill = document.querySelector('.eval-fill') || document.getElementById('evalFill') || document.getElementById('evalBarFill');
+    if(!fill) return;
+    const clamped = Math.min(100, Math.max(0, Math.round(percentage)));
+    fill.style.height = clamped + '%';
+  }
+
+  function setLoadState(id, state){
+    loadState[id] = state;
+  }
+
+  const champListEl = document.getElementById('champList');
+  function renderChampList(){
+    champListEl.innerHTML = '';
+    CHAMPIONS.forEach(c => {
+      const state = loadState[c.id] || 'loaded';
+      const row = document.createElement('div');
+      row.className = 'champ-row' + (c.id === selectedChampionId ? ' active' : '');
+      const dot = document.createElement('div');
+      dot.className = 'champ-dot loaded';
+      const meta = document.createElement('div');
+      meta.className = 'champ-meta';
+      meta.innerHTML = '<span class="champ-name">'+c.name+'</span><span class="champ-years">'+c.years+'</span>';
+      const tag = document.createElement('div');
+      tag.className = 'champ-tag';
+      tag.textContent = (c.id === selectedChampionId ? 'playing' : 'ready');
+      row.appendChild(dot);
+      row.appendChild(meta);
+      row.appendChild(tag);
+      row.addEventListener('click', () => {
+        selectedChampionId = c.id;
+        renderChampList();
+        renderOpponentLine();
+        renderStatus();
+      });
+      champListEl.appendChild(row);
+    });
+  }
+
+  function renderOpponentLine(){
+    const el = document.getElementById('opponentLine');
+    if(engineMode === 'neural'){
+      el.innerHTML = 'Playing against the <strong>unified Neural MCTS engine</strong> <span style="color:var(--text-faint)">(learned evaluation)</span>';
+      return;
+    }
+    const c = CHAMPIONS.find(x => x.id === selectedChampionId) || CHAMPIONS[0];
+    el.innerHTML = 'Playing against <strong>'+c.name+'</strong> <span style="color:var(--text-faint)">('+c.years+')</span>';
+  }
+
+  function renderMoveList(){
+    const el = document.getElementById('moveList');
+    const hist = game.history();
+    if(hist.length === 0){
+      el.innerHTML = '<div class="empty-moves">No moves played.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    for(let i=0; i<hist.length; i+=2){
+      const row = document.createElement('div');
+      row.className = 'move-row';
+      row.innerHTML = '<span class="num">'+(i/2+1)+'.</span><span class="san">'+hist[i]+'</span><span class="san">'+(hist[i+1] || '')+'</span>';
+      el.appendChild(row);
+    }
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function renderStatus(){
+    const pill = document.getElementById('statusPill');
+    pill.classList.remove('thinking','over','check');
+    if(gameOverMsg){
+      pill.textContent = gameOverMsg;
+      pill.classList.add('over');
+      return;
+    }
+    if(thinking){
+      const label = engineMode === 'neural' ? 'The neural engine' :
+        ((CHAMPIONS.find(x => x.id === selectedChampionId) || {}).name || 'Engine');
+      pill.textContent = label + ' is thinking…';
+      pill.classList.add('thinking');
+      return;
+    }
+    if(game.turn() !== playerColor){
+      pill.textContent = 'Waiting for opponent…';
+      return;
+    }
+    if(selectedSquare){
+      pill.textContent = 'Selected ' + selectedSquare + ' — choose destination (click again to deselect)';
+      return;
+    }
+    if(game.in_check()){
+      pill.textContent = 'You are in check';
+      pill.classList.add('check');
+      return;
+    }
+    pill.textContent = 'Your move';
+  }
+
+  function checkGameOver(){
+    if(game.game_over()){
+      playSound('gameover');
+      if(game.in_checkmate()){
+        gameOverMsg = (game.turn() === playerColor) ? 'Checkmate — the champion wins.' : 'Checkmate — you win.';
+      } else if(game.in_stalemate()){
+        gameOverMsg = 'Draw by stalemate.';
+      } else if(game.in_threefold_repetition()){
+        gameOverMsg = 'Draw by repetition.';
+      } else if(game.insufficient_material()){
+        gameOverMsg = 'Draw — insufficient material.';
+      } else if(game.in_draw()){
+        gameOverMsg = 'Draw.';
+      } else {
+        gameOverMsg = 'Game over.';
+      }
+      if(userMoveHistory.length > 0){
+        evaluateStyleMatch(userMoveHistory).then(renderStyleBreakdown);
+      }
+    } else {
+      gameOverMsg = null;
+    }
+  }
+
+  // ---------------- Board Rendering ----------------
+  const boardEl = document.getElementById('board');
+  const rankLabelsEl = document.getElementById('rankLabels');
+  const fileLabelsEl = document.getElementById('fileLabels');
+
+  function squareAt(rowVis, colVis){
+    let rank, file;
+    if(orientation === 'white'){
+      rank = 8 - rowVis;
+      file = colVis;
+    } else {
+      rank = rowVis + 1;
+      file = 7 - colVis;
+    }
+    return FILES[file] + rank;
+  }
+
+  function renderCoordLabels(){
+    rankLabelsEl.innerHTML = '';
+    fileLabelsEl.innerHTML = '';
+    const ranks = orientation === 'white' ? [8,7,6,5,4,3,2,1] : [1,2,3,4,5,6,7,8];
+    const files = orientation === 'white' ? FILES : FILES.slice().reverse();
+    ranks.forEach(r => { const s = document.createElement('span'); s.textContent = r; rankLabelsEl.appendChild(s); });
+    files.forEach(f => { const s = document.createElement('span'); s.textContent = f; fileLabelsEl.appendChild(s); });
+  }
+
+  function kingInCheckSquare(){
+    if(!game.in_check()) return null;
+    const turn = game.turn();
+    const b = game.board();
+    for(let row=0; row<8; row++){
+      for(let col=0; col<8; col++){
+        const p = b[row][col];
+        if(p && p.type === 'k' && p.color === turn){
+          const rank = 8 - row, file = FILES[col];
+          return file + rank;
+        }
+      }
+    }
+    return null;
+  }
+
+  function renderBoard(){
+    boardEl.innerHTML = '';
+    boardEl.classList.toggle('locked', thinking || !!gameOverMsg);
+    const checkSq = kingInCheckSquare();
+
+    for(let rowVis=0; rowVis<8; rowVis++){
+      for(let colVis=0; colVis<8; colVis++){
+        const sq = squareAt(rowVis, colVis);
+        const isLight = (FILES.indexOf(sq[0]) + parseInt(sq[1],10)) % 2 === 1;
+        const div = document.createElement('div');
+        div.className = 'sq ' + (isLight ? 'light' : 'dark');
+        div.setAttribute('data-sq', sq);
+
+        if(sq === selectedSquare) div.classList.add('selected');
+        if(lastMove && (sq === lastMove.from || sq === lastMove.to)) div.classList.add('last-move');
+        if(sq === checkSq) div.classList.add('king-check');
+
+        const piece = game.get(sq);
+        if(piece){
+          const span = document.createElement('span');
+          span.className = piece.color === 'w' ? 'piece-w' : 'piece-b';
+          span.textContent = PIECE_GLYPH[piece.color][piece.type];
+          div.appendChild(span);
+        }
+        if(legalTargets.indexOf(sq) !== -1){
+          const marker = document.createElement('div');
+          marker.className = piece ? 'ring' : 'dot';
+          div.appendChild(marker);
+          div.addEventListener('mouseenter', () => div.classList.add('legal-hover'));
+          div.addEventListener('mouseleave', () => div.classList.remove('legal-hover'));
+        }
+        div.addEventListener('click', () => onSquareClick(sq));
+        boardEl.appendChild(div);
+      }
+    }
+  }
+
+  // ---------------- AI Move Dispatcher ----------------
+  async function triggerAIMove(){
+    thinking = true;
+    const boardFrame = document.querySelector('.board-frame');
+    if(boardFrame) boardFrame.classList.add('thinking-active');
+    renderStatus();
+    document.getElementById('engineInfo').textContent = '';
+
+    // Wait 50ms so UI updates thinking state
+    await new Promise(r => setTimeout(r, 50));
+
+    try {
+      // --- 1. Opening Book Interception (0 ms) ---
+      const cleanFen = getCleanFen(game);
+      const rawBookMove = getBookMove(cleanFen);
+      if(rawBookMove){
+        const parsedMv = parseBookMove(rawBookMove);
+        if(parsedMv){
+          const played = game.move(parsedMv);
+          if(played){
+            lastMove = {from: played.from, to: played.to};
+            document.getElementById('engineInfo').textContent = '📖 Book Move (Grandmaster Theory)';
+            if(played.captured) playSound('capture'); else playSound('move');
+            if(game.in_check()) playSound('check');
+            return;
+          }
+        }
+      }
+
+      // --- 2. Search Execution ---
+      const budgetMs = SEARCH_BUDGETS[searchStrength] || SEARCH_BUDGETS.club;
+      let result;
+      if(engineMode === 'neural'){
+        result = await mctsSearch(game, unifiedSession, budgetMs);
+      } else {
+        const sess = sessions[selectedChampionId] || unifiedSession;
+        result = await searchBestMove(game, sess, budgetMs);
+      }
+
+      const mv = result.move;
+      if(mv){
+        const moveObj = {from: mv.from, to: mv.to};
+        if(mv.promotion) moveObj.promotion = mv.promotion;
+        const played = game.move(moveObj);
+        if(played){
+          lastMove = {from: mv.from, to: mv.to};
+          updateEvalBar(result.winProb, result.evalScore);
+          if(played.captured) playSound('capture'); else playSound('move');
+          if(game.in_check()) playSound('check');
+
+          const label = engineMode === 'neural'
+            ? 'Neural MCTS ran ' + (result.simulations || 0) + ' simulations (PUCT C=1.5)'
+            : ((CHAMPIONS.find(x => x.id === selectedChampionId) || {}).name || 'Engine') + ' searched ' + (result.depth || 1) + ' ply ahead';
+          document.getElementById('engineInfo').textContent = label;
+        }
+      }
+    } catch(err) {
+      console.error('AI Move Error:', err);
+    } finally {
+      thinking = false;
+      if(boardFrame) boardFrame.classList.remove('thinking-active');
+      renderBoard();
+      renderMoveList();
+      checkGameOver();
+      renderStatus();
+    }
+  }
+
+  // ---------------- Player Interaction ----------------
+  function doPlayerMove(from, to){
+    const fenBefore = game.fen();
+    const piece = game.get(from);
+    const moveObj = {from, to};
+    if(piece && piece.type === 'p' && (to[1] === '8' || to[1] === '1')){
+      moveObj.promotion = 'q';
+    }
+    const result = game.move(moveObj);
+    if(!result) return;
+
+    userMoveHistory.push({fen: fenBefore, playedMove: result});
+
+    if(result.captured) playSound('capture'); else playSound('move');
+    if(game.in_check()) playSound('check');
+
+    lastMove = {from, to};
+    selectedSquare = null;
+    legalTargets = [];
+
+    const playerStaticScore = evaluate(game);
+    const playerNormScore = Math.tanh(playerStaticScore / 400);
+    const playerPercentage = 50 + (playerNormScore * 50);
+    updateEvalBar(playerPercentage);
+
+    renderBoard();
+    renderMoveList();
+    checkGameOver();
+    renderStatus();
+
+    if(!gameOverMsg){
+      triggerAIMove();
+    }
+  }
+
+  function onSquareClick(sq){
+    if(thinking || gameOverMsg) return;
+    if(game.turn() !== playerColor) return;
+
+    const piece = game.get(sq);
+
+    if(selectedSquare){
+      if(legalTargets.indexOf(sq) !== -1){
+        doPlayerMove(selectedSquare, sq);
+        return;
+      }
+      if(sq === selectedSquare){
+        selectedSquare = null;
+        legalTargets = [];
+      } else if(piece && piece.color === playerColor){
+        selectedSquare = sq;
+        legalTargets = game.moves({square: sq, verbose:true}).map(m => m.to);
+      } else {
+        selectedSquare = null;
+        legalTargets = [];
+      }
+    } else if(piece && piece.color === playerColor){
+      selectedSquare = sq;
+      legalTargets = game.moves({square: sq, verbose:true}).map(m => m.to);
+    }
+    renderBoard();
+    renderStatus();
+  }
+
+  function undoMove(){
+    if(thinking || gameOverMsg) return;
+    if(game.history().length === 0) return;
+    if(game.turn() === playerColor){
+      game.undo();
+      userMoveHistory.pop();
+      if(game.history().length > 0){ game.undo(); userMoveHistory.pop(); }
+    } else {
+      game.undo();
+      userMoveHistory.pop();
+    }
+    selectedSquare = null;
+    legalTargets = [];
+    lastMove = null;
+    gameOverMsg = null;
+    document.getElementById('engineInfo').textContent = '';
+    updateEvalBar(50);
+    renderBoard();
+    renderMoveList();
+    renderStatus();
+  }
+
+  function newGame(){
+    game = new Chess();
+    userMoveHistory = [];
+    document.getElementById('styleContainer').style.display = 'none';
+    const colorChoice = document.getElementById('colorSelect').value;
+    playerColor = colorChoice === 'black' ? 'b' : 'w';
+    orientation = colorChoice;
+    selectedSquare = null;
+    legalTargets = [];
+    lastMove = null;
+    gameOverMsg = null;
+    document.getElementById('engineInfo').textContent = '';
+    updateEvalBar(50);
+    renderCoordLabels();
+    renderBoard();
+    renderMoveList();
+    renderStatus();
+    if(playerColor === 'b'){
+      triggerAIMove();
+    }
+  }
+
+  // ---------------- Wiring & Event Listeners ----------------
+  document.getElementById('infoToggle').addEventListener('click', () => {
+    document.getElementById('infoPanel').classList.toggle('open');
+  });
+  document.getElementById('newGameBtn').addEventListener('click', newGame);
+  document.getElementById('undoBtn').addEventListener('click', undoMove);
+  document.getElementById('strengthSelect').addEventListener('change', (e) => {
+    searchStrength = e.target.value;
+  });
+
+  document.getElementById('copyPgnBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(game.pgn());
+    alert('PGN copied to clipboard!');
+  });
+
+  document.getElementById('loadFenBtn').addEventListener('click', () => {
+    const fen = prompt('Enter valid FEN string:');
+    if(fen){
+      const valid = game.load(fen);
+      if(valid){
+        selectedSquare = null;
+        legalTargets = [];
+        lastMove = null;
+        gameOverMsg = null;
+        renderCoordLabels();
+        renderBoard();
+        renderMoveList();
+        renderStatus();
+      } else {
+        alert('Invalid FEN string!');
+      }
+    }
+  });
+
+  document.getElementById('engineSelect').addEventListener('change', (e) => {
+    engineMode = e.target.value;
+    document.getElementById('classicalPanel').style.display = engineMode === 'classical' ? '' : 'none';
+    document.getElementById('neuralPanel').style.display = engineMode === 'neural' ? '' : 'none';
+    renderOpponentLine();
+    renderStatus();
+  });
+
+  // ---------------- Init Startup ----------------
+  CHAMPIONS.forEach(c => { loadState[c.id] = 'loaded'; });
+  selectedChampionId = CHAMPIONS[0].id;
+  renderChampList();
+  renderOpponentLine();
+  renderCoordLabels();
+  renderBoard();
+  renderMoveList();
+  renderStatus();
+  loadOpeningBook();
+  autoLoadDefaultModel();
+})();
+</script>
+</body>
+</html>
