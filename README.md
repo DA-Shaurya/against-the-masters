@@ -4,9 +4,9 @@
 [![JavaScript](https://img.shields.io/badge/Language-JavaScript%20ES6+-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![ONNX Runtime Web](https://img.shields.io/badge/ONNX%20Runtime-WebAssembly-blue.svg)](https://onnxruntime.ai/)
 [![Web Audio API](https://img.shields.io/badge/Web%20Audio-Synthesized-green.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-[![Client-Side Execution](https://img.shields.io/badge/Execution-100%25%20In--Browser-brightgreen.svg)]()
+[![Mobile Compatible](https://img.shields.io/badge/Mobile-100%25%20Responsive-brightgreen.svg)]()
 
-> **Against the Masters** is a zero-dependency, presentation-grade web chess platform powered by ten neural networks trained on historical World Chess Champions' recorded games. It features a dual-engine architecture (**Classical Alpha-Beta with Champion Policy Bias** vs **Pure Neural Monte Carlo Tree Search**), real-time evaluation bars, endgame driving heuristics, and opening book interception — running 100% client-side in the browser.
+> **Against the Masters** is a zero-dependency, presentation-grade web chess platform powered by ten neural networks trained on historical World Chess Champions' recorded games. It features a dual-engine architecture (**Classical Alpha-Beta with Champion Policy Bias** vs **Pure Neural Monte Carlo Tree Search**), real-time evaluation bars, endgame driving heuristics, and opening book interception — running 100% client-side in desktop and mobile browsers.
 
 ---
 
@@ -15,6 +15,11 @@
 ### 🧠 Dual Engine Search Architectures
 - **Classical Alpha-Beta Search**: Combines material evaluation, Piece-Square Tables (PST), tactical threat protection (penalizing hanging major pieces under pawn attack by over 600 centipawns), and Quiescence search with imitation-trained **Champion Policy Bias** (+0 to +15 centipawn boost for signature champion moves).
 - **Neural MCTS Engine**: Executes pure Monte Carlo Tree Search using a dual-head Policy/Value network (`move_logits` and `value` heads), leaf expansion, PUCT move selection ($C_{\text{PUCT}} = 1.5$), exact terminal state resolution (Checkmate = -1.0, Draw = 0.0), and alternating sign backpropagation.
+
+### 📱 Mobile & Tablet Responsive Architecture
+- **Dynamic Board Scaling**: Uses dynamic CSS viewport math (`min(calc((100vw - 64px) / 8), 56px)`) to automatically compute perfect square and piece sizes on all mobile device widths (320px–430px iPhones, Androids, iPads).
+- **Instant Touch Interactivity**: Integrated `touchstart` and `click` handling with `touch-action: manipulation;` for 0 ms tap latency without double-tap zoom delays or tap box highlighting.
+- **Adaptive Single-Column Layout**: Automatically reorders elements on mobile screens to prioritize the Chessboard and Evaluation Bar, with compact champion grid selection.
 
 ### 🛡️ Material-Anchored Horizon Blending
 To prevent Monte Carlo Tree Search from making un-calculated piece sacrifices when search depth cuts off, the MCTS engine blends neural evaluations with static material values:
