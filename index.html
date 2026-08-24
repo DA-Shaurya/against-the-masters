@@ -28,7 +28,13 @@
     --sq-size:min(calc((100vw - 64px) / 8), 56px);
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{
+    margin:0;padding:0;
+    overflow-x:hidden;
+    touch-action:pan-y;
+    overscroll-behavior:none;
+    -webkit-overflow-scrolling:touch;
+  }
   body{
     background:var(--bg);
     color:var(--ivory);
@@ -272,6 +278,9 @@
     grid-template-columns:repeat(8, var(--sq-size));
     grid-template-rows:repeat(8, var(--sq-size));
     border:1px solid #2E2015;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
   }
   .file-labels{
     display:flex;justify-content:space-around;margin-top:6px;
@@ -518,12 +527,42 @@
 
   @media (max-width: 600px){
     :root{
-      --sq-size: min(calc((100vw - 32px) / 8), 54px);
+      --sq-size: min(calc((100vw - 20px) / 8), 54px);
     }
-    .board-frame{ padding: 4px 2px; border-radius: 4px; }
+    body{
+      padding: 6px 4px 20px;
+    }
+    header{
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      gap: 4px;
+    }
+    h1{ font-size: 20px; }
+    .mobile-tabs{ margin-bottom: 8px; gap: 4px; }
+    .mobile-tabs .tab-btn{ padding: 8px 2px; font-size: 12px; }
+
+    .board-panel{
+      padding: 4px 2px;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+    }
+    .board-frame{
+      padding: 4px 2px;
+      border-radius: 4px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      width: 100%;
+    }
+    .eval-bar{ width: 7px; margin-right: 2px; }
     .rank-labels{ margin-right: 2px; }
-    .rank-labels span, .file-labels span{ font-size: 8.5px; opacity: 0.65; }
-    .status-pill{ font-size: 11px; padding: 5px 12px; margin-bottom: 8px; }
+    .rank-labels span, .file-labels span{ font-size: 8px; opacity: 0.6; }
+    .status-pill{ font-size: 11px; padding: 4px 10px; margin-bottom: 6px; min-height: auto; }
+    .board-controls{ margin-top: 8px; gap: 4px; }
+    .board-controls select, .board-controls button{
+      min-height: 38px;
+      font-size: 12px;
+      padding: 6px 8px;
+    }
   }
 </style>
 </head>
