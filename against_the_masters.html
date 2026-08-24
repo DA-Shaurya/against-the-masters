@@ -406,40 +406,80 @@
     color:var(--text-faint);
   }
 
+  /* ---------- Mobile Tab Switcher ---------- */
+  .mobile-tabs{
+    display:none;
+    gap:8px;
+    margin-bottom:14px;
+    width:100%;
+  }
+  .mobile-tabs .tab-btn{
+    flex:1;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    background:var(--panel);
+    color:var(--text-dim);
+    border:1px solid var(--hairline);
+    border-radius:20px;
+    padding:10px 4px;
+    cursor:pointer;
+    text-align:center;
+    transition:all 0.2s ease;
+    touch-action:manipulation;
+  }
+  .mobile-tabs .tab-btn.active{
+    background:var(--gold);
+    color:#1B140D;
+    font-weight:600;
+    border-color:var(--gold);
+  }
+
   /* ---------- Comprehensive Mobile & Tablet Responsive Media Queries ---------- */
   @media (max-width: 900px){
     body{
-      padding: 12px 10px 40px;
+      padding: 10px 8px 40px;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
     header{
       flex-direction: column;
       align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
     }
-    h1{ font-size: 26px; }
-    .subtitle{ font-size: 11.5px; }
+    h1{ font-size: 24px; }
+    .subtitle{ display: none; }
+
+    .mobile-tabs{ display: flex; }
 
     .layout{
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
-    .board-panel{ order: 1; padding: 12px 6px; }
-    #leftPanel{ order: 2; padding: 12px; }
-    .scoresheet-panel{ order: 3; padding: 12px; max-height: 400px; }
+    .layout .panel{
+      display: none;
+    }
+    .layout .panel.active-mobile-panel{
+      display: flex !important;
+      flex-direction: column;
+    }
+
+    .board-panel{ padding: 10px 6px; }
+    #leftPanel{ padding: 12px; }
+    .scoresheet-panel{ padding: 12px; max-height: 400px; }
 
     .board-frame{
-      padding: 10px 6px;
+      padding: 8px 4px;
       width: 100%;
       display: flex;
       justify-content: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
     }
     .board-inner{ gap: 2px; }
-    .eval-bar{ width: 10px; margin-right: 4px; }
+    .eval-bar{ width: 9px; margin-right: 4px; }
 
     .board-controls{
       gap: 6px;
@@ -448,7 +488,7 @@
     }
     .board-controls select, .board-controls button{
       flex: 1 1 calc(50% - 6px);
-      min-height: 42px;
+      min-height: 44px;
       font-size: 13px;
       padding: 8px 10px;
       text-align: center;
@@ -475,14 +515,14 @@
     .champ-tag{ font-size: 8.5px; }
   }
 
-  @media (max-width: 480px){
+  @media (max-width: 600px){
     :root{
-      --sq-size: min(calc((100vw - 44px) / 8), 44px);
+      --sq-size: min(calc((100vw - 32px) / 8), 54px);
     }
-    .board-frame{ padding: 6px 4px; }
-    .rank-labels{ margin-right: 3px; }
-    .rank-labels span, .file-labels span{ font-size: 9px; }
-    .status-pill{ font-size: 11px; padding: 6px 10px; margin-bottom: 10px; }
+    .board-frame{ padding: 4px 2px; border-radius: 4px; }
+    .rank-labels{ margin-right: 2px; }
+    .rank-labels span, .file-labels span{ font-size: 8.5px; opacity: 0.65; }
+    .status-pill{ font-size: 11px; padding: 5px 12px; margin-bottom: 8px; }
   }
 </style>
 </head>
@@ -503,6 +543,11 @@
     <strong>Neural MCTS</strong> — a dual-head policy/value network trained on all champions combined. Moves are chosen using Monte Carlo Tree Search (PUCT formula $C_{PUCT}=1.5$) with exact terminal state handling and leaf expansion.
     <br><br>
     <strong>Opening Book</strong> — grandmaster theory moves are played instantly (0 ms) before running search engines.
+  <!-- Mobile Mode Tabs -->
+  <div class="mobile-tabs" id="mobileTabs">
+    <button class="tab-btn active" data-target="boardPanel">♟️ Game</button>
+    <button class="tab-btn" data-target="leftPanel">🏛️ Champions</button>
+    <button class="tab-btn" data-target="scoresheetPanel">📜 Moves</button>
   </div>
 
   <div class="layout">
@@ -1308,6 +1353,9 @@
         renderChampList();
         renderOpponentLine();
         renderStatus();
+        if(window.innerWidth <= 900 && typeof switchMobileTab === 'function'){
+          switchMobileTab('boardPanel');
+        }
       });
       champListEl.appendChild(row);
     });
@@ -1699,6 +1747,33 @@
     renderStatus();
   });
 
+  // ---------------- Mobile Tabs Logic ----------------
+  const tabBtns = document.querySelectorAll('.mobile-tabs .tab-btn');
+  const panels = {
+    boardPanel: document.querySelector('.board-panel'),
+    leftPanel: document.getElementById('leftPanel'),
+    scoresheetPanel: document.querySelector('.scoresheet-panel')
+  };
+
+  function switchMobileTab(targetKey){
+    tabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.target === targetKey);
+    });
+    Object.keys(panels).forEach(key => {
+      if(panels[key]){
+        if(key === targetKey){
+          panels[key].classList.add('active-mobile-panel');
+        } else {
+          panels[key].classList.remove('active-mobile-panel');
+        }
+      }
+    });
+  }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchMobileTab(btn.dataset.target));
+  });
+
   // ---------------- Init Startup ----------------
   CHAMPIONS.forEach(c => { loadState[c.id] = 'loaded'; });
   selectedChampionId = CHAMPIONS[0].id;
@@ -1710,6 +1785,10 @@
   renderStatus();
   loadOpeningBook();
   autoLoadDefaultModel();
+
+  if(window.innerWidth <= 900){
+    switchMobileTab('boardPanel');
+  }
 })();
 </script>
 </body>
