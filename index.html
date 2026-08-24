@@ -102,8 +102,9 @@
     align-items:start;
     justify-content:center;
   }
-  @media (max-width:980px){
-    .layout{grid-template-columns:1fr;justify-content:stretch;}
+  .layout .panel{
+    display:flex;
+    flex-direction:column;
   }
 
   .panel{
@@ -459,17 +460,17 @@
       flex-direction: column;
       gap: 12px;
     }
-    .layout .panel{
-      display: none;
+    .layout.tab-mode .panel{
+      display: none !important;
     }
-    .layout .panel.active-mobile-panel{
+    .layout.tab-mode .panel.active-mobile-panel{
       display: flex !important;
       flex-direction: column;
     }
 
-    .board-panel{ padding: 10px 6px; }
-    #leftPanel{ padding: 12px; }
-    .scoresheet-panel{ padding: 12px; max-height: 400px; }
+    .board-panel{ order: 1; padding: 10px 6px; }
+    #leftPanel{ order: 2; padding: 12px; }
+    .scoresheet-panel{ order: 3; padding: 12px; max-height: 400px; }
 
     .board-frame{
       padding: 8px 4px;
@@ -548,6 +549,7 @@
     <button class="tab-btn active" data-target="boardPanel">♟️ Game</button>
     <button class="tab-btn" data-target="leftPanel">🏛️ Champions</button>
     <button class="tab-btn" data-target="scoresheetPanel">📜 Moves</button>
+    <button class="tab-btn" data-target="allPanels">📱 All</button>
   </div>
 
   <div class="layout">
@@ -1749,6 +1751,7 @@
 
   // ---------------- Mobile Tabs Logic ----------------
   const tabBtns = document.querySelectorAll('.mobile-tabs .tab-btn');
+  const layoutEl = document.querySelector('.layout');
   const panels = {
     boardPanel: document.querySelector('.board-panel'),
     leftPanel: document.getElementById('leftPanel'),
@@ -1756,6 +1759,12 @@
   };
 
   function switchMobileTab(targetKey){
+    if(targetKey === 'allPanels'){
+      layoutEl.classList.remove('tab-mode');
+      tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.target === 'allPanels'));
+      return;
+    }
+    layoutEl.classList.add('tab-mode');
     tabBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.target === targetKey);
     });
